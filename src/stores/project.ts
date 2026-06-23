@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { invoke } from '@tauri-apps/api/core';
+import { invoke, convertFileSrc } from '@tauri-apps/api/core';
 import type { PhotoItem, TemplateInfo, OutputSettings, FaceBox } from '../types';
 
 function generateId(): string {
@@ -34,7 +34,7 @@ export const useProjectStore = defineStore('project', {
           id: generateId(),
           filePath,
           fileName,
-          thumbnailUrl: '', // Tauri will resolve via asset protocol
+          thumbnailUrl: convertFileSrc(filePath),
           faces: [],
           selectedFaceIndex: null,
           status: 'pending',
@@ -55,51 +55,75 @@ export const useProjectStore = defineStore('project', {
     },
 
     async loadTemplate(templateId: string) {
-      const template = await invoke<TemplateInfo>('load_template', {
-        templateId,
-      });
-      this.currentTemplate = template;
-      this.outputSettings = {
-        width: template.output.default.width,
-        height: template.output.default.height,
-        fps: template.output.default.fps,
-        durationPerPhoto: template.output.default.duration_per_photo,
-        bgmPath: null,
-      };
+      try {
+        const template = await invoke<TemplateInfo>('load_template', {
+          templateId,
+        });
+        this.currentTemplate = template;
+        this.outputSettings = {
+          width: template.output.default.width,
+          height: template.output.default.height,
+          fps: template.output.default.fps,
+          durationPerPhoto: template.output.default.duration_per_photo,
+          bgmPath: null,
+        };
+      } catch (err) {
+        this.statusMessage = '⚠️ 加载模板失败: ' + String(err);
+      }
     },
 
     async detectFaces() {
       const pendingPhotos = this.photos.filter(
-        (p) => p.status === 'pending' || p.status === 'analyzing'
+        (p) => p.status === 'pending'
       );
       if (pendingPhotos.length === 0) return;
 
-      const photoPaths = pendingPhotos.map((p) => p.filePath);
+      this.isProcessing = true;
+      this.statusMessage = '正在分析人脸...';
 
+      // Set status to analyzing BEFORE invoke
       for (const photo of pendingPhotos) {
         const found = this.photos.find((p) => p.id === photo.id);
         if (found) found.status = 'analyzing';
       }
 
-      const results = await invoke<[string, FaceBox[]][]>('detect_faces', {
-        photoPaths,
-      });
+      try {
+        const photoPaths = pendingPhotos.map((p) => p.filePath);
+        // detect_faces returns Vec<DetectFacesResult> = { photo_index, faces }[]
+        const results = await invoke<{ photo_index: number; faces: FaceBox[] }[]>('detect_faces', {
+          photoPaths,
+        });
 
-      for (const [path, faces] of results) {
-        const photo = this.photos.find((p) => p.filePath === path);
-        if (!photo) continue;
+        for (const result of results) {
+          const photo = pendingPhotos[result.photo_index];
+          if (!photo) continue;
 
-        photo.faces = faces;
-        photo.status = 'done';
+          // Find the actual photo in this.photos to update
+          const storePhoto = this.photos.find((p) => p.id === photo.id);
+          if (!storePhoto) continue;
 
-        if (faces.length === 0) {
-          photo.status = 'no-face';
-          photo.selectedFaceIndex = null;
-        } else if (faces.length === 1) {
-          photo.selectedFaceIndex = 0;
-        } else {
+          storePhoto.faces = result.faces;
+          storePhoto.status = 'done';
+
+          if (result.faces.length === 0) {
+            storePhoto.status = 'no-face';
+            storePhoto.selectedFaceIndex = null;
+          } else if (result.faces.length === 1) {
+            storePhoto.selectedFaceIndex = 0;
+          }
           // Multiple faces: leave selectedFaceIndex unset for user to choose
         }
+
+        this.statusMessage = `人脸分析完成（${results.length} 张）`;
+      } catch (err) {
+        // Reset status on failure so user can retry
+        for (const photo of pendingPhotos) {
+          const storePhoto = this.photos.find((p) => p.id === photo.id);
+          if (storePhoto) storePhoto.status = 'pending';
+        }
+        this.statusMessage = '分析失败: ' + String(err);
+      } finally {
+        this.isProcessing = false;
       }
     },
 
@@ -124,23 +148,27 @@ export const useProjectStore = defineStore('project', {
       this.statusMessage = '正在对齐照片...';
 
       try {
-        const alignResult = await invoke<string>('align_photos', {
-          photos: this.photos,
+        // align_photos expects AlignPhotosInput { photo_paths, selected_faces, template_id }
+        const alignedPaths = await invoke<string[]>('align_photos', {
+          photoPaths: this.photos.map((p) => p.filePath),
+          selectedFaces: this.photos.map((p) => p.selectedFaceIndex),
+          templateId: this.currentTemplate?.id || 'silent-grow',
         });
 
         this.statusMessage = '正在渲染视频...';
 
+        // render_video expects RenderVideoInput { aligned_photo_paths, output_path, template_id, bgm_path }
         const outputPath = await invoke<string>('render_video', {
-          template: this.currentTemplate,
-          outputSettings: this.outputSettings,
-          alignedData: alignResult,
+          alignedPhotoPaths: alignedPaths,
+          outputPath: '/tmp/hey24-output.mp4',
+          templateId: this.currentTemplate?.id || 'silent-grow',
+          bgmPath: this.outputSettings.bgmPath,
         });
 
-        this.outputVideoPath = outputPath;
+        this.outputVideoPath = convertFileSrc(outputPath);
         this.statusMessage = '视频生成完成！';
-      } catch (error) {
-        this.statusMessage = '生成失败: ' + (error as Error).message;
-        throw error;
+      } catch (err) {
+        this.statusMessage = '生成失败: ' + String(err);
       } finally {
         this.isProcessing = false;
       }
