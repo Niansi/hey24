@@ -1,0 +1,66 @@
+<h2>🎬 三种架构方案对比</h2>
+<p class="subtitle">macOS 视频剪辑工具 - 选择整体架构</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Rust 全栈方案</h3>
+      <p>Rust 负责一切：<code>ort</code> 跑人脸检测、<code>image</code> 处理图片、<code>ffmpeg-next</code> 合成视频。前端只做 UI 壳。</p>
+      <div class="pros-cons" style="margin-top:8px;font-size:13px">
+        <div class="pros"><h4>👍 优点</h4><ul>
+          <li>单一编译产物，无外部依赖</li>
+          <li>性能极致，所有处理在 Rust 层</li>
+        </ul></div>
+        <div class="cons"><h4>👎 缺点</h4><ul>
+          <li>ffmpeg-next 绑定复杂易出错</li>
+          <li>调试视频编码问题困难</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Rust + FFmpeg 管道 ⭐ 推荐</h3>
+      <p>Rust 负责人脸检测 + 图片处理，视频合成委托给系统 FFmpeg（子进程）。</p>
+      <div class="pros-cons" style="margin-top:8px;font-size:13px">
+        <div class="pros"><h4>👍 优点</h4><ul>
+          <li>FFmpeg 管道成熟稳定</li>
+          <li>人脸检测用 <code>ort</code> CPU 上飞快</li>
+          <li>无需额外运行时依赖</li>
+          <li>容易接入更多模板</li>
+        </ul></div>
+        <div class="cons"><h4>👎 缺点</h4><ul>
+          <li>用户需安装 FFmpeg（可内置）</li>
+          <li>图片→视频需中转帧序列</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Rust + Python 侧车</h3>
+      <p>Rust 做 Tauri 壳，Python 侧车用 OpenCV 做检测+渲染。</p>
+      <div class="pros-cons" style="margin-top:8px;font-size:13px">
+        <div class="pros"><h4>👍 优点</h4><ul>
+          <li>Python 生态最丰富</li>
+          <li>InsightFace 等人脸方案随便换</li>
+        </ul></div>
+        <div class="cons"><h4>👎 缺点</h4><ul>
+          <li>需捆绑 Python 运行时（~50MB）</li>
+          <li>进程间通信复杂</li>
+          <li>macOS 打包麻烦</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:24px;padding:12px;background:var(--accent-bg);border-radius:8px">
+  <p style="margin:0"><strong>💡 推荐 B：Rust + FFmpeg 管道</strong><br>
+  理由：① 够快——YuNet 单张图片 ~20ms，批处理无压力 ② 够稳——FFmpeg 的 filter_complex 管道是行业标准 ③ 够轻——ONNX 模型 ~300KB，不拖累打包体积 ④ 易扩展——新增模板只需调整 Rust 端图片处理逻辑</p>
+</div>
