@@ -1,0 +1,23 @@
+name: "悄悄长大"
+id: silent-grow
+version: 1
+output:
+  default:
+    width: 1080
+    height: 1920
+    fps: 5
+    duration_per_photo: 0.2
+pipeline:
+  - stage: face_detect
+    model: yunet
+    keypoints: true
+    confidence_threshold: 0.5
+  - stage: face_align
+    target_eye_y: 0.38
+    target_eye_distance: 320
+    fill_mode: blur_expand
+  - stage: render
+    transition: cut
+    fps: 30
+    codec: h264_videotoolbox
+    bitrate: "8M"
