@@ -1,6 +1,6 @@
-mod engine;
+pub mod engine;
 mod error;
-mod commands;
+pub mod commands;
 
 use commands::AppState;
 use std::sync::Mutex;
