@@ -3,3 +3,4 @@
 {"source":"user-event","type":"click","text":"B\n    \n      Rust + FFmpeg 管道 ⭐ 推荐\n      Rust 负责人脸检测 + 图片处理，视频合成委托给系统 FFmpeg（子进程）。\n      \n        👍 优点\n          FFmpeg 管道成熟稳定\n          人脸检测用 ort CPU 上飞快\n          无需额外运行时依赖\n          容易接入更多模板\n        \n        👎 缺点\n          用户需安装 FFmpeg（可内置）\n          图片→视频需中转帧序列","choice":"b","id":null,"timestamp":1782212928509}
 {"source":"user-event","type":"click","text":"B\n    \n      Rust + FFmpeg 管道 ⭐ 推荐\n      Rust 负责人脸检测 + 图片处理，视频合成委托给系统 FFmpeg（子进程）。\n      \n        👍 优点\n          FFmpeg 管道成熟稳定\n          人脸检测用 ort CPU 上飞快\n          无需额外运行时依赖\n          容易接入更多模板\n        \n        👎 缺点\n          用户需安装 FFmpeg（可内置）\n          图片→视频需中转帧序列","choice":"b","id":null,"timestamp":1782212930029}
 {"type":"screen-added","file":"/Users/wuxiangyu/WorkSpace/ai/hey24/.superpowers/brainstorm/7844-1782212872/content/waiting.html"}
+{"type":"server-stopped","reason":"idle timeout"}
