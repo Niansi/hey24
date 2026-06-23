@@ -8,8 +8,9 @@ import { useProjectStore } from './stores/project';
 
 const store = useProjectStore();
 
-onMounted(() => {
-  store.loadTemplate('silent-grow');
+onMounted(async () => {
+  await store.loadTemplate('silent-grow');
+  await store.checkSystem();
 });
 </script>
 

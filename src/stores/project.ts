@@ -110,6 +110,15 @@ export const useProjectStore = defineStore('project', {
       }
     },
 
+    async checkSystem() {
+      try {
+        const version = await invoke<string>('check_system');
+        this.statusMessage = `FFmpeg: ${version.split('\n')[0]}`;
+      } catch (err) {
+        this.statusMessage = `⚠️ ${err}`;
+      }
+    },
+
     async generateVideo() {
       this.isProcessing = true;
       this.statusMessage = '正在对齐照片...';

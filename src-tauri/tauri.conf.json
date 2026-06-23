@@ -15,7 +15,8 @@
         "width": 1200,
         "height": 800,
         "minWidth": 800,
-        "minHeight": 600
+        "minHeight": 600,
+        "dragDropEnabled": true
       }
     ],
     "security": {
@@ -35,6 +36,9 @@
     "resources": [
       "models/yunet.onnx",
       "templates/*"
-    ]
+    ],
+    "category": "Video",
+    "shortDescription": "AI-powered video clipping tool",
+    "longDescription": "Hey24 — 智能视频剪辑工具，选择模板后自动生成剪辑视频。"
   }
 }
