@@ -43,7 +43,7 @@ function borderColor(status: PhotoItem['status']): string {
         :style="{ backgroundImage: `url(${photo.thumbnailUrl || photo.filePath})` }"
       ></div>
       <span class="status-overlay">{{ statusIcon(photo.status) }}</span>
-      <button class="remove-btn" title="移除" @click="emit('remove', photo.id)">&times;</button>
+      <button class="remove-btn" title="移除" @click.stop="emit('remove', photo.id)">&times;</button>
     </div>
     <div class="photo-name">{{ photo.fileName }}</div>
   </div>
